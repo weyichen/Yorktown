@@ -6,7 +6,6 @@ import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.Toast;
 
 import com.parse.GetCallback;
 import com.parse.ParseException;
@@ -24,11 +23,18 @@ public class MainActivity extends ActionBarActivity implements
         LocationFragment.OnLocationListener {
 
 // *** VARIABLES ***
+
+    // tag for LocationFragment, which runs without a UI
     protected static final String LOCATION_TAG = "location";
 
+    // coordinates obtained by LocationFragment
+    protected double latitude = Double.NaN, longitude = Double.NaN;
+
+
+    // request code for LoginActivity
     protected static final int LOGIN_CODE = 1;
 
-    protected double latitude = Double.NaN, longitude = Double.NaN;
+
 
 // *** ACTIVITY LIFECYCLE ***
     @Override
@@ -37,10 +43,10 @@ public class MainActivity extends ActionBarActivity implements
 
         setContentView(R.layout.activity_main);
 
+        // set up fragments: LocationFragment (background) and TabFragment (foreground)
         if (savedInstanceState == null) {
-            // set up layout and add fragments
             getSupportFragmentManager().beginTransaction()
-                    .add(R.id.fragment_container, new CardsFragment())
+                    .add(R.id.fragment_container, new TabFragment())
                     .add(new LocationFragment(), LOCATION_TAG)
                     .commit();
         }
@@ -49,8 +55,17 @@ public class MainActivity extends ActionBarActivity implements
 // *** UI COMPONENTS ***
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
+        super.onCreateOptionsMenu(menu);
+
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
+
+        return true;
+    }
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        super.onPrepareOptionsMenu(menu);
 
         // change "sign in" to "sign out" if user is signed in
         if (ParseUser.getCurrentUser() != null) {
@@ -70,9 +85,7 @@ public class MainActivity extends ActionBarActivity implements
 
         // if log in is is successful, we refresh the activity
         if(requestCode == 1 && resultCode == RESULT_OK) {
-            finish();
-            startActivity(getIntent());
-            Toast.makeText(this, "logged in", Toast.LENGTH_SHORT).show();
+            invalidateOptionsMenu();
         }
     }
 
@@ -147,50 +160,14 @@ public class MainActivity extends ActionBarActivity implements
 
     private void openLogOut() {
         ParseUser.logOut();
-        finish();
-        startActivity(getIntent());
+        invalidateOptionsMenu();
     }
 
     private void openSearch() {
-        final String testJSON = "[\n" +
-                "     {\n" +
-                "          \"type\":\"plane\",\n" +
-                "          \"name\":\"PEK to JFK\",\n" +
-                "          \"start_time\":\"0600+8\",\n" +
-                "          \"end_time\":\"1215-5d\",\n" +
-                "          \"details\":\"Arrive in New York on your flight\",\n" +
-                "          \"location_id\":\"XLtSOgstgL\"\n" +
-                "     },\n" +
-                "     {\n" +
-                "          \"type\":\"hotel\",\n" +
-                "          \"name\":\"Casablanca Hotel Times Square\",\n" +
-                "          \"start_time\":\"0600+8\",\n" +
-                "          \"end_time\":\"1215-5d\",\n" +
-                "          \"details\":\"Your hotel, #2 on TripAdvisor for New York\",\n" +
-                "          \"location_id\":\"EMO9LaehPh\"\n" +
-                "     },\n" +
-                "     {\n" +
-                "          \"type\":\"walk\",\n" +
-                "          \"name\":\"Times Square\",\n" +
-                "          \"start_time\":\"0600+8\",\n" +
-                "          \"end_time\":\"1215-5d\",\n" +
-                "          \"details\":\"A busy place. Too many tourists.\",\n" +
-                "          \"location_id\":\"y3iMJQnSxP\"\n" +
-                "     },\n" +
-                "     {\n" +
-                "          \"type\":\"landmark\",\n" +
-                "          \"name\":\"Empire State Building\",\n" +
-                "          \"start_time\":\"0600+8\",\n" +
-                "          \"end_time\":\"1215-5d\",\n" +
-                "          \"details\":\"A very tall building\",\n" +
-                "          \"location_id\":\"C5AZ4R6DVy\"\n" +
-                "     }\n" +
-                "]\n";
+        final String testJSON = DebugData.testJSON;
 
         // update the object
         ParseQuery<ParseObject> query = ParseQuery.getQuery("Trip");
-
-
 
         try {
             final JSONArray jsonArray = new JSONArray(testJSON);
@@ -207,6 +184,7 @@ public class MainActivity extends ActionBarActivity implements
         } catch (JSONException e) {
             e.printStackTrace();
         }
-
     }
+
+// *** HELPERS ***
 }
