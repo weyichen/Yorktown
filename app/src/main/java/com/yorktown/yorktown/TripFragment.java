@@ -96,7 +96,10 @@ public class TripFragment extends ListFragment {
     }
 
     private void getItinerary(final String tripId) {
+
         ParseQuery<ParseObject> query = ParseQuery.getQuery("Trip");
+        query.fromLocalDatastore(); // search the local datastore since all trips were already cached when they were fetched in CardsFragment
+
         query.getInBackground(tripId, new GetCallback<ParseObject>() {
             public void done(ParseObject object, ParseException e) {
                 if (e == null) {

@@ -20,7 +20,6 @@ public class LocationFragment extends Fragment implements ConnectionCallbacks, O
 
     protected GoogleApiClient mGoogleApiClient;
     protected Location mLastLocation;
-    private static final String TAG = "location-fragment";
 
     // *** INTERFACE ***
     public interface OnLocationListener {
@@ -46,7 +45,7 @@ public class LocationFragment extends Fragment implements ConnectionCallbacks, O
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        buildGoogleApiClient();
+            buildGoogleApiClient();
     }
 
     @Override
@@ -79,14 +78,14 @@ public class LocationFragment extends Fragment implements ConnectionCallbacks, O
     public void onConnectionFailed(ConnectionResult result) {
         // Refer to the javadoc for ConnectionResult to see what error codes might be returned in
         // onConnectionFailed.
-        Log.i(TAG, "Connection failed: ConnectionResult.getErrorCode() = " + result.getErrorCode());
+        Log.i("location-fragment", "Connection failed: ConnectionResult.getErrorCode() = " + result.getErrorCode());
     }
 
     @Override
     public void onConnectionSuspended(int cause) {
         // The connection to Google Play services was lost for some reason. We call connect() to
         // attempt to re-establish the connection.
-        Log.i(TAG, "Connection suspended");
+        Log.i("location-fragment", "Connection suspended");
         mGoogleApiClient.connect();
     }
 

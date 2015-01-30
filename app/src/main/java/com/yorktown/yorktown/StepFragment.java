@@ -17,6 +17,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.parse.DeleteCallback;
 import com.parse.GetCallback;
 import com.parse.ParseException;
 import com.parse.ParseGeoPoint;
@@ -71,6 +72,12 @@ public class StepFragment extends Fragment {
     public void onStart() {
         super.onStart();
 
+        // initialize mMap
+        if (mMap == null) {
+            mMap = mapFragment.getMap();
+            mMap.setMyLocationEnabled(true);
+        }
+
         // During startup, check if there are arguments passed to the fragment.
         // onStart is a good place to do this because the layout has already been
         // applied to the fragment at this point so we can safely call the method
@@ -116,7 +123,12 @@ public class StepFragment extends Fragment {
             TextView stepDetails = (TextView) getActivity().findViewById(R.id.step_details);
             stepDetails.setText(jsonObject.getString("details"));
 
-            fetchLocations(jsonObject.getString("location_id"));
+            if (new Connectivity(getActivity()).isConnected()) {
+                getLocationsOnline(jsonObject.getString("location_id"));
+            } else {
+                getLocationsCached(jsonObject.getString("location_id"));
+            }
+
 
         } catch (JSONException e) {
             e.printStackTrace();
@@ -124,31 +136,43 @@ public class StepFragment extends Fragment {
     }
 
 
-    private void fetchLocations(final String locationId) {
+    private void getLocationsOnline(final String locationId) {
         ParseQuery<ParseObject> query = ParseQuery.getQuery("Location");
+
         query.getInBackground(locationId, new GetCallback<ParseObject>() {
-            public void done(ParseObject object, ParseException e) {
+            public void done(final ParseObject location, ParseException e) {
                 if (e == null) {
-                    Log.d("Location", "Retrieved location " + locationId);
 
-                    ParseGeoPoint geoPoint = object.getParseGeoPoint("geoPoint");
-                    String pointName = ParseHelpers.getString("desc", object);
-                    plotOnMap(geoPoint, pointName);
+                    // toss old cache and cache new results by unpinning/pinning to Parse local datastore
+                    ParseObject.unpinAllInBackground(location.getObjectId(), new DeleteCallback() {
+                        public void done(ParseException e) {
+                            location.pinInBackground();
+                        }
+                    });
 
-                } else {
-                    Log.d("Trip", "Failed to retrieve location " + locationId);
+                    // plot point on map
+                    plotOnMap(location);
                 }
             }
         });
     }
 
-    private void plotOnMap(ParseGeoPoint geoPoint, String pointName) {
-        // initialize mMap
-        if (mMap == null) {
-            mMap = mapFragment.getMap();
-        }
+    private void getLocationsCached(final String locationId) {
+        ParseQuery<ParseObject> query = ParseQuery.getQuery("Location");
+        query.fromLocalDatastore();
 
-        mMap.setMyLocationEnabled(true);
+        query.getInBackground(locationId, new GetCallback<ParseObject>() {
+            public void done(ParseObject location, ParseException e) {
+                if (e == null) {
+                    plotOnMap(location);
+                }
+            }
+        });
+    }
+
+    private void plotOnMap(ParseObject location) {
+        ParseGeoPoint geoPoint = location.getParseGeoPoint("geoPoint");
+        String pointName = ParseHelpers.getString("desc", location);
 
         final double latitude = geoPoint.getLatitude();
         final double longitude = geoPoint.getLongitude();
@@ -165,8 +189,7 @@ public class StepFragment extends Fragment {
 
     private void enableDirections(final double latitude, final double longitude) {
         // set listener for directions button
-        View view = getView();
-        Button button = (Button) view.findViewById(R.id.directions);
+        Button button = (Button) getView().findViewById(R.id.directions);
         button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 getDirections(latitude, longitude);
@@ -178,7 +201,7 @@ public class StepFragment extends Fragment {
 
     // launch directions in Google Maps, from user's current location to location in step
     private void getDirections(final double latitude, final double longitude) {
-        Uri gmmIntentUri = null;
+        Uri gmmIntentUri;
         MainActivity mainActivity = (MainActivity) getActivity(); // get values from parent activity
 
         double userLat = mainActivity.latitude;
