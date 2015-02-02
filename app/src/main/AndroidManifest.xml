@@ -45,10 +45,6 @@
             android:label="@string/title_activity_login"
             android:windowSoftInputMode="adjustResize|stateHidden" >
         </activity>
-        <activity
-            android:name=".TabbedActivity"
-            android:label="@string/title_activity_tabbed" >
-        </activity>
     </application>
 
 </manifest>

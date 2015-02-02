@@ -42,6 +42,7 @@ public class StepFragment extends Fragment {
 // *** ACTIVITY LIFECYCLE ***
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        super.onCreateView(inflater, container, savedInstanceState);
 
         if (savedInstanceState != null) {
             mCurrentPosition = savedInstanceState.getInt(ARG_POSITION);

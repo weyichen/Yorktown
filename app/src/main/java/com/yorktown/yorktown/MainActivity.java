@@ -2,8 +2,8 @@ package com.yorktown.yorktown;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
 import android.support.v7.app.ActionBarActivity;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
@@ -33,7 +33,6 @@ public class MainActivity extends ActionBarActivity implements
 
     // request code for LoginActivity
     protected static final int LOGIN_CODE = 1;
-
 
 
 // *** ACTIVITY LIFECYCLE ***
@@ -79,16 +78,6 @@ public class MainActivity extends ActionBarActivity implements
         return true;
     }
 
-// *** LISTENERS ***
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-
-        // if log in is is successful, we refresh the activity
-        if(requestCode == 1 && resultCode == RESULT_OK) {
-            invalidateOptionsMenu();
-        }
-    }
-
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
@@ -113,16 +102,39 @@ public class MainActivity extends ActionBarActivity implements
     }
 
     @Override
-    public void onTripSelected(int position, String tripId) {
-        // Create fragment and give it an argument for the selected item
+    public void onAttachFragment(Fragment fragment) {
+        super.onAttachFragment(fragment);
+
+        invalidateOptionsMenu();
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+
+        invalidateOptionsMenu();
+    }
+
+// *** LISTENERS ***
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        // if log in is is successful, we refresh the activity
+        if(requestCode == 1 && resultCode == RESULT_OK) {
+            invalidateOptionsMenu();
+        }
+    }
+
+    @Override
+    public void onTripSelected(String tripId) {
+        // create a new TripFragment for the selected trip, passing in the trip ID
         TripFragment newFragment = new TripFragment();
         Bundle args = new Bundle();
-        args.putInt(TripFragment.ARG_POSITION, position);
-        args.putString(TripFragment.ARG_TRIPID, tripId); // pass trip ID
-        Log.d("ARG_TRIPID", "tripID has been set " + tripId);
+        args.putString(TripFragment.ARG_TRIPID, tripId);
         newFragment.setArguments(args);
 
-        // add the fragment to the activity
+        // show the fragment
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.fragment_container, newFragment)
                 .addToBackStack(null)
@@ -187,4 +199,5 @@ public class MainActivity extends ActionBarActivity implements
     }
 
 // *** HELPERS ***
+
 }

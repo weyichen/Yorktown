@@ -3,7 +3,11 @@ package com.yorktown.yorktown;
 import android.app.Activity;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
+import android.support.v4.view.MenuItemCompat;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ListView;
 
@@ -24,7 +28,7 @@ public class CardsFragment extends ListFragment {
 
 // *** INTERFACE ***
     public interface OnTripSelectedListener {
-        public void onTripSelected(int position, String tripId);
+        public void onTripSelected(String tripId);
     }
 
 // *** ACTIVITY LIFECYCLE ***
@@ -46,8 +50,10 @@ public class CardsFragment extends ListFragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // retrieve all trips from Parse
+        // allow fragment to contribute to the menu
+        setHasOptionsMenu(true);
 
+        // retrieve all trips from Parse
         if (new Connectivity(getActivity()).isConnected()) {
             getAllTripsOnline();
         } else {
@@ -63,11 +69,38 @@ public class CardsFragment extends ListFragment {
         // TODO: implement multi-fragment layout
     }
 
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        super.onCreateOptionsMenu(menu, inflater);
+
+        MenuItem addTripItem = menu.add(Menu.NONE, Menu.NONE, 1, "Add Trip")
+                .setIcon(R.drawable.ic_note_add_grey600_24dp);
+        MenuItemCompat.setShowAsAction(addTripItem, MenuItem.SHOW_AS_ACTION_IF_ROOM);
+
+        addTripItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            public boolean onMenuItemClick(MenuItem menuItem) {
+                openAdd();
+                return true;
+            }
+        });
+    }
+
+    // *** MENU ITEMS
+    private void openAdd() {
+        NewTripFragment newFragment = new NewTripFragment();
+        getActivity().getSupportFragmentManager().beginTransaction()
+                .replace(R.id.fragment_container, newFragment)
+                .addToBackStack(null)
+                .commit();
+    }
+
 // *** LISTENERS ***
     @Override
     public void onListItemClick(ListView l, View v, int position, long id) {
+        super.onListItemClick(l, v, position, id);
+
         // Send the event to the host activity
-        mCallback.onTripSelected(position, tripIdList[position]);
+        mCallback.onTripSelected(tripIdList[position]);
     }
 
 // *** HELPERS ***

@@ -12,4 +12,11 @@
     <string name="title_section2">Section 2</string>
     <string name="title_section3">Section 3</string>
 
+    <string-array name="step_types">
+        <item>Attraction</item>
+        <item>Transportation</item>
+        <item>Accommodation</item>
+        <item>Walking Tour</item>
+    </string-array>
+
 </resources>

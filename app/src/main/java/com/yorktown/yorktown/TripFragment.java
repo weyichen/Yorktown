@@ -3,7 +3,11 @@ package com.yorktown.yorktown;
 import android.app.Activity;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
+import android.support.v4.view.MenuItemCompat;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ListView;
 
@@ -22,11 +26,9 @@ public class TripFragment extends ListFragment {
     // *** VARIABLES ***
     OnStepSelectedListener mCallback;
 
-    final static String ARG_POSITION = "position";
     final static String ARG_TRIPID = "trip_id";
 
-    int mCurrentPosition = -1;
-    String mCurrentTripId = null;
+    String mCurrentTripId;
 
     private JSONObject[] steps;
 
@@ -53,6 +55,9 @@ public class TripFragment extends ListFragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // allow fragment to contribute to the menu
+        setHasOptionsMenu(true);
     }
 
     @Override
@@ -62,12 +67,37 @@ public class TripFragment extends ListFragment {
         Bundle args = getArguments();
         if (args != null) {
             // Set trip based on argument passed in
-            updateTripView(args.getInt(ARG_POSITION), args.getString(ARG_TRIPID));
+            updateTripView(args.getString(ARG_TRIPID));
 
-        } else if (mCurrentPosition != -1) {
+        } else if (mCurrentTripId != null) {
             // Set trip based on saved instance state defined during onCreateView
-            updateTripView(mCurrentPosition, mCurrentTripId);
+            updateTripView(mCurrentTripId);
         }
+    }
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        super.onCreateOptionsMenu(menu, inflater);
+
+        MenuItem addTripItem = menu.add(Menu.NONE, Menu.NONE, 1, "Add Trip")
+                .setIcon(R.drawable.ic_note_add_grey600_24dp);
+        MenuItemCompat.setShowAsAction(addTripItem, MenuItem.SHOW_AS_ACTION_IF_ROOM);
+
+        addTripItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            public boolean onMenuItemClick(MenuItem menuItem) {
+                openAdd();
+                return true;
+            }
+        });
+    }
+
+    // *** MENU ITEMS
+    private void openAdd() {
+        NewStepFragment newFragment = new NewStepFragment();
+        getActivity().getSupportFragmentManager().beginTransaction()
+                .replace(R.id.fragment_container, newFragment)
+                .addToBackStack(null)
+                .commit();
     }
 
 // *** INSTANCE STATE ***
@@ -76,7 +106,6 @@ public class TripFragment extends ListFragment {
         super.onSaveInstanceState(outState);
 
         // Save the current article selection in case we need to recreate the fragment
-        outState.putInt(ARG_POSITION, mCurrentPosition);
         outState.putString(ARG_TRIPID, mCurrentTripId);
     }
 
@@ -88,8 +117,7 @@ public class TripFragment extends ListFragment {
     }
 
 // *** HELPERS
-    private void updateTripView(int position, String tripId) {
-        mCurrentPosition = position;
+    private void updateTripView(String tripId) {
         mCurrentTripId = tripId;
 
         getItinerary(tripId);
@@ -98,7 +126,7 @@ public class TripFragment extends ListFragment {
     private void getItinerary(final String tripId) {
 
         ParseQuery<ParseObject> query = ParseQuery.getQuery("Trip");
-        query.fromLocalDatastore(); // search the local datastore since all trips were already cached when they were fetched in CardsFragment
+        query.fromLocalDatastore();
 
         query.getInBackground(tripId, new GetCallback<ParseObject>() {
             public void done(ParseObject object, ParseException e) {
