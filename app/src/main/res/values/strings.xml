@@ -13,6 +13,7 @@
     <string name="title_section3">Section 3</string>
 
     <string-array name="step_types">
+        <item>Type</item>
         <item>Attraction</item>
         <item>Transportation</item>
         <item>Accommodation</item>

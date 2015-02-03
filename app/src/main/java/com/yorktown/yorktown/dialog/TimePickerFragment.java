@@ -8,6 +8,8 @@ import android.support.v4.app.DialogFragment;
 import android.text.format.DateFormat;
 import android.widget.TimePicker;
 
+import com.yorktown.yorktown.DateHelpers;
+
 import java.util.Calendar;
 
 /**
@@ -29,9 +31,16 @@ public class TimePickerFragment extends DialogFragment
     }
 
     public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
-        // return the date to the fragment that opened this fragment
+        // use the user-selected date format to format the time
+        Calendar c = Calendar.getInstance();
+        c.set(Calendar.HOUR_OF_DAY, hourOfDay);
+        c.set(Calendar.MINUTE, minute);
+        String formattedTime = DateHelpers.formatTime(c.getTime());
+
+        // return the correctly formatted date to the fragment that opened this fragment
         Intent intent = new Intent();
-        intent.putExtra("hourOfDay", hourOfDay);
+        intent.putExtra("string", formattedTime);
+        intent.putExtra("hour", hourOfDay);
         intent.putExtra("minute", minute);
         getTargetFragment().onActivityResult(getTargetRequestCode(), 1, intent);
     }

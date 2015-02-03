@@ -7,6 +7,8 @@ import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
 import android.widget.DatePicker;
 
+import com.yorktown.yorktown.DateHelpers;
+
 import java.util.Calendar;
 
 /**
@@ -28,8 +30,16 @@ public class DatePickerFragment extends DialogFragment
     }
 
     public void onDateSet(DatePicker view, int year, int month, int day) {
-        // return the date to the fragment that opened this fragment
+        // use the user-selected date format to format the time
+        Calendar c = Calendar.getInstance();
+        c.set(Calendar.YEAR, year);
+        c.set(Calendar.MONTH, month);
+        c.set(Calendar.DAY_OF_MONTH, day);
+        String formattedDate = DateHelpers.formatDate(c.getTime());
+
+        // return the correctly formatted date to the fragment that opened this fragment
         Intent intent = new Intent();
+        intent.putExtra("string", formattedDate);
         intent.putExtra("year", year);
         intent.putExtra("month", month);
         intent.putExtra("day", day);

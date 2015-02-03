@@ -21,10 +21,19 @@ import java.util.List;
 
 public class CardsFragment extends ListFragment {
 
-// *** VARIABLES ***
+// *** LISTENER VARIABLES ***
     OnTripSelectedListener mCallback;
 
+// *** GLOBAL PARAMETERS ***
     private String[] tripIdList; // stores the objectId fields of all trips retrieved from Parse
+
+// *** FACTORY ***
+    public static CardsFragment newInstance() {
+        CardsFragment fragment = new CardsFragment();
+        Bundle args = new Bundle();
+        fragment.setArguments(args);
+        return fragment;
+    }
 
 // *** INTERFACE ***
     public interface OnTripSelectedListener {
@@ -87,7 +96,7 @@ public class CardsFragment extends ListFragment {
 
     // *** MENU ITEMS
     private void openAdd() {
-        NewTripFragment newFragment = new NewTripFragment();
+        NewTripFragment newFragment = NewTripFragment.newInstance();
         getActivity().getSupportFragmentManager().beginTransaction()
                 .replace(R.id.fragment_container, newFragment)
                 .addToBackStack(null)

@@ -22,20 +22,17 @@ public class MainActivity extends ActionBarActivity implements
         TripFragment.OnStepSelectedListener,
         LocationFragment.OnLocationListener {
 
-// *** VARIABLES ***
-
-    // tag for LocationFragment, which runs without a UI
-    protected static final String LOCATION_TAG = "location";
-
-    // coordinates obtained by LocationFragment
+// *** GLOBAL VARIABLES ***
     protected double latitude = Double.NaN, longitude = Double.NaN;
 
+// *** FRAGMENT TAGS
+    protected static final String LOCATION_TAG = "location";
 
-    // request code for LoginActivity
+// *** REQUEST CODE ***
     protected static final int LOGIN_CODE = 1;
 
 
-// *** ACTIVITY LIFECYCLE ***
+// *** LIFECYCLE ***
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -128,13 +125,7 @@ public class MainActivity extends ActionBarActivity implements
 
     @Override
     public void onTripSelected(String tripId) {
-        // create a new TripFragment for the selected trip, passing in the trip ID
-        TripFragment newFragment = new TripFragment();
-        Bundle args = new Bundle();
-        args.putString(TripFragment.ARG_TRIPID, tripId);
-        newFragment.setArguments(args);
-
-        // show the fragment
+        TripFragment newFragment = TripFragment.newInstance(tripId);
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.fragment_container, newFragment)
                 .addToBackStack(null)
@@ -142,15 +133,8 @@ public class MainActivity extends ActionBarActivity implements
     }
 
     @Override
-    public void onStepSelected(int position, String jsonString) {
-        // Create fragment and give it an argument for the selected item
-        StepFragment newFragment = new StepFragment();
-        Bundle args = new Bundle();
-        args.putInt(StepFragment.ARG_POSITION, position);
-        args.putString(StepFragment.ARG_STEP, jsonString);
-        newFragment.setArguments(args);
-
-        // add the fragment to the activity
+    public void onStepSelected(String jsonString) {
+        StepFragment newFragment = StepFragment.newInstance(jsonString);
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.fragment_container, newFragment)
                 .addToBackStack(null)

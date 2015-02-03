@@ -2,6 +2,8 @@ package com.yorktown.yorktown;
 
 import com.parse.ParseObject;
 
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
@@ -23,5 +25,20 @@ public class ParseHelpers {
         } else {
             return null;
         }
+    }
+
+    public static JSONObject[] getJSONObjectArray(JSONArray jsonArray) {
+        JSONObject[] jsonObjects = new JSONObject[jsonArray.length()];
+
+        try {
+            for(int i=0; i<jsonArray.length(); i++) {
+                jsonObjects[i] = jsonArray.getJSONObject(i);
+            }
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        return jsonObjects;
     }
 }

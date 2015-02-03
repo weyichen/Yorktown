@@ -29,27 +29,43 @@ import org.json.JSONObject;
 
 public class StepFragment extends Fragment {
 
-// *** VARIABLES ***
-    final static String ARG_POSITION = "position";
-    final static String ARG_STEP = "step";
+// *** INITIALIZATION PARAMETERS ***
+    final static String ARG_STEPJSON = "step_json";
 
-    int mCurrentPosition = -1;
-    String mCurrentStep = null;
+// *** GLOBAL PARAMETERS ***
+    private String mStepJSON;
 
+// *** UI ELEMENTS ***
     private SupportMapFragment mapFragment;
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
 
-// *** ACTIVITY LIFECYCLE ***
+// *** FACTORY ***
+    public static StepFragment newInstance(String stepJSON) {
+        StepFragment fragment = new StepFragment();
+        Bundle args = new Bundle();
+        args.putString(ARG_STEPJSON, stepJSON);
+        fragment.setArguments(args);
+        return fragment;
+    }
+
+// *** LIFECYCLE ***
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        // get initialization parameters
+        if (getArguments() != null) {
+            mStepJSON = getArguments().getString(ARG_STEPJSON);
+        }
+
+        // allow fragment to contribute to the menu
+        setHasOptionsMenu(true);
+    }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         super.onCreateView(inflater, container, savedInstanceState);
 
-        if (savedInstanceState != null) {
-            mCurrentPosition = savedInstanceState.getInt(ARG_POSITION);
-            mCurrentStep = savedInstanceState.getString(ARG_STEP);
-        }
-
-        // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_step, container, false);
     }
 
@@ -57,7 +73,17 @@ public class StepFragment extends Fragment {
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        // add SupportMapFragment to container in StepFragment
+
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+
+        // display step information
+        updateStepView(mStepJSON);
+
+        // place the MapFragment
         FragmentManager fm = getChildFragmentManager();
         mapFragment = (SupportMapFragment) fm.findFragmentById(R.id.map_container);
         if (mapFragment == null) {
@@ -65,58 +91,20 @@ public class StepFragment extends Fragment {
             fm.beginTransaction()
                     .replace(R.id.map_container, mapFragment)
                     .commit();
-
         }
-    }
 
-    @Override
-    public void onStart() {
-        super.onStart();
-
-        // initialize mMap
+        // initialize the map
         if (mMap == null) {
             mMap = mapFragment.getMap();
             mMap.setMyLocationEnabled(true);
         }
-
-        // During startup, check if there are arguments passed to the fragment.
-        // onStart is a good place to do this because the layout has already been
-        // applied to the fragment at this point so we can safely call the method
-        // below that sets the article text.
-        Bundle args = getArguments();
-        if (args != null) {
-            // Set view based on argument passed in
-            updateStepView(args.getInt(ARG_POSITION), args.getString(ARG_STEP));
-        } else if (mCurrentPosition != -1) {
-            // Set view based on saved instance state defined during onCreateView
-            updateStepView(mCurrentPosition, mCurrentStep);
-        }
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-
-    }
-
-// *** INSTANCE STATE ***
-    @Override
-    public void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-
-        // Save the current article selection in case we need to recreate the fragment
-        outState.putInt(ARG_POSITION, mCurrentPosition);
-        outState.putString(ARG_STEP, mCurrentStep);
     }
 
 // *** HELPERS ***
-    private void updateStepView(int position, String jsonString) {
-
-        mCurrentPosition = position;
-        mCurrentStep = jsonString;
+    private void updateStepView(String stepJSON) {
 
         try {
-            JSONObject jsonObject = new JSONObject(jsonString);
+            JSONObject jsonObject = new JSONObject(stepJSON);
 
             TextView stepTitle = (TextView) getActivity().findViewById(R.id.step_title);
             stepTitle.setText(jsonObject.getString("name"));

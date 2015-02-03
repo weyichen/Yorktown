@@ -21,12 +21,12 @@ public class SectionsPagerAdapter extends FragmentPagerAdapter {
 
         // TODO: return the appropriate fragments
         if (position == 0) {
-            Fragment cardsFragment = new CardsFragment();
+            Fragment cardsFragment = CardsFragment.newInstance();
             return cardsFragment;
         }
 
         if (position == 1) {
-            Fragment cardsFragment = new CardsFragment();
+            Fragment cardsFragment = CardsFragment.newInstance();
             return cardsFragment;
         }
 

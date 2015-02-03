@@ -17,27 +17,36 @@ import com.parse.ParseObject;
 import com.parse.ParseQuery;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 
 public class TripFragment extends ListFragment {
 
-    // *** VARIABLES ***
+// *** LISTENER VARIABLES ***
     OnStepSelectedListener mCallback;
 
-    final static String ARG_TRIPID = "trip_id";
+// *** INITIALIZATION PARAMETERS ***
+    private final static String ARG_TRIPID = "trip_id";
 
-    String mCurrentTripId;
-
+// *** GLOBAL PARAMETERS ***
+    private String mTripId;
     private JSONObject[] steps;
+
+// *** FACTORY ***
+    public static TripFragment newInstance(String tripId) {
+        TripFragment fragment = new TripFragment();
+        Bundle args = new Bundle();
+        args.putString(ARG_TRIPID, tripId);
+        fragment.setArguments(args);
+        return fragment;
+    }
 
 // *** INTERFACE ***
     public interface OnStepSelectedListener {
-        public void onStepSelected(int position, String step);
+        public void onStepSelected(String step);
     }
 
-// *** ACTIVITY LIFECYCLE ***
+// *** LIFECYCLE ***
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
@@ -56,6 +65,11 @@ public class TripFragment extends ListFragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        // get initialization parameters
+        if (getArguments() != null) {
+            mTripId = getArguments().getString(ARG_TRIPID);
+        }
+
         // allow fragment to contribute to the menu
         setHasOptionsMenu(true);
     }
@@ -64,17 +78,10 @@ public class TripFragment extends ListFragment {
     public void onStart() {
         super.onStart();
 
-        Bundle args = getArguments();
-        if (args != null) {
-            // Set trip based on argument passed in
-            updateTripView(args.getString(ARG_TRIPID));
-
-        } else if (mCurrentTripId != null) {
-            // Set trip based on saved instance state defined during onCreateView
-            updateTripView(mCurrentTripId);
-        }
+        getItinerary(mTripId);
     }
 
+// *** MENU ***
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         super.onCreateOptionsMenu(menu, inflater);
@@ -91,38 +98,22 @@ public class TripFragment extends ListFragment {
         });
     }
 
-    // *** MENU ITEMS
     private void openAdd() {
-        NewStepFragment newFragment = new NewStepFragment();
+        NewStepFragment newFragment = NewStepFragment.newInstance(mTripId);
         getActivity().getSupportFragmentManager().beginTransaction()
                 .replace(R.id.fragment_container, newFragment)
                 .addToBackStack(null)
                 .commit();
     }
 
-// *** INSTANCE STATE ***
-    @Override
-    public void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-
-        // Save the current article selection in case we need to recreate the fragment
-        outState.putString(ARG_TRIPID, mCurrentTripId);
-    }
-
 // *** LISTENERS ***
     @Override
     public void onListItemClick(ListView l, View v, int position, long id) {
         // Send the event to the host activity
-        mCallback.onStepSelected(position, steps[position].toString());
+        mCallback.onStepSelected(steps[position].toString());
     }
 
-// *** HELPERS
-    private void updateTripView(String tripId) {
-        mCurrentTripId = tripId;
-
-        getItinerary(tripId);
-    }
-
+// *** HELPERS ***
     private void getItinerary(final String tripId) {
 
         ParseQuery<ParseObject> query = ParseQuery.getQuery("Trip");
@@ -134,7 +125,10 @@ public class TripFragment extends ListFragment {
                     Log.d("Trip", "Retrieved trip " + tripId);
 
                     JSONArray jsonArray = object.getJSONArray("steps");
-                    parseJSON(jsonArray);
+
+                    steps = ParseHelpers.getJSONObjectArray(jsonArray);
+                    setListAdapter(new StepAdapter(getActivity(), R.layout.step_item, steps));
+
                 } else {
                     Log.d("Trip", "Failed to retrieve trip " + tripId);
                 }
@@ -142,19 +136,4 @@ public class TripFragment extends ListFragment {
         });
     }
 
-    private void parseJSON(JSONArray jsonArray) {
-
-        try {
-            steps = new JSONObject[jsonArray.length()];
-
-            for(int i=0; i<jsonArray.length(); i++) {
-                steps[i] = jsonArray.getJSONObject(i);
-            }
-
-            setListAdapter(new StepAdapter(getActivity(), R.layout.step_item, steps));
-
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-    }
 }
