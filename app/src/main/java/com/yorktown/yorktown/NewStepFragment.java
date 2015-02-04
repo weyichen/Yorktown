@@ -13,11 +13,14 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
 
+import com.parse.GetCallback;
+import com.parse.ParseException;
 import com.parse.ParseObject;
 import com.parse.ParseQuery;
 import com.parse.ParseUser;
 import com.yorktown.yorktown.dialog.ShowDialog;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -34,6 +37,7 @@ public class NewStepFragment extends Fragment
     private final static String ARG_TRIPID = "trip_id";
 
 // *** GLOBAL PARAMETERS ***
+    private String mTripId;
     private ShowDialog showDialog;
     private int year, month, day, hour, minute;
 
@@ -57,6 +61,19 @@ public class NewStepFragment extends Fragment
 
 // *** LIFECYCLE ***
     @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        // get initialization parameters
+        if (getArguments() != null) {
+            mTripId = getArguments().getString(ARG_TRIPID);
+        }
+
+        // allow fragment to contribute to the menu
+        setHasOptionsMenu(true);
+    }
+
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
         return inflater.inflate(R.layout.fragment_newstep, container, false);
@@ -64,9 +81,10 @@ public class NewStepFragment extends Fragment
 
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
 
         // set up UI elements
-        nameEditText = (EditText) view.findViewById(R.id.trip_title);
+        nameEditText = (EditText) view.findViewById(R.id.step_name);
         typeSpinner = (Spinner) view.findViewById(R.id.step_type);
         dateButton = (Button) view.findViewById(R.id.step_date);
         timeButton = (Button) view.findViewById(R.id.step_time);
@@ -103,7 +121,7 @@ public class NewStepFragment extends Fragment
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.create_step:
-                createStep();
+                createStep(mTripId);
                 break;
             case R.id.step_date:
                 showDialog.showDatePickerDialog(DATE_CODE);
@@ -143,7 +161,7 @@ public class NewStepFragment extends Fragment
     }
 
 // *** HELPERS ***
-    private void createStep() {
+    private void createStep(String tripId) {
         ParseUser currentUser = ParseUser.getCurrentUser();
 
         // grab information entered by user
@@ -153,8 +171,8 @@ public class NewStepFragment extends Fragment
         c.set(year, month, day, hour, minute);
         String date = DateHelpers.formatJSONTime(c.getTime());
 
-        // construct JSONObject and place it in the JSONArray for the trip
-        JSONObject jsonData = new JSONObject();
+        // construct JSONObject
+        final JSONObject jsonData = new JSONObject();
         try {
             jsonData.put("name", stepName);
             jsonData.put("type", stepType);
@@ -163,16 +181,21 @@ public class NewStepFragment extends Fragment
             e.printStackTrace();
         }
 
+        // get existing steps JSONArray for this step, add the newly created JSONObject, then update it
         ParseQuery<ParseObject> query = ParseQuery.getQuery("Trip");
         query.fromLocalDatastore();
 
-        /*query.getInBackground(tripId, new GetCallback<ParseObject>() {
+        query.getInBackground(tripId, new GetCallback<ParseObject>() {
             public void done(ParseObject object, ParseException e) {
                 if (e == null) {
+                    JSONArray jsonArray = ParseHelpers.getJSONArray(object, "steps");
+                    jsonArray.put(jsonData);
+                    object.put("steps", jsonArray);
+                    object.saveInBackground();
 
                 }
             }
-        });*/
+        });
 
     }
 }

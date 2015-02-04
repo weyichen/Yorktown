@@ -30,7 +30,7 @@ import org.json.JSONObject;
 public class StepFragment extends Fragment {
 
 // *** INITIALIZATION PARAMETERS ***
-    final static String ARG_STEPJSON = "step_json";
+    private final static String ARG_STEPJSON = "step_json";
 
 // *** GLOBAL PARAMETERS ***
     private String mStepJSON;
@@ -161,7 +161,7 @@ public class StepFragment extends Fragment {
 
     private void plotOnMap(ParseObject location) {
         ParseGeoPoint geoPoint = location.getParseGeoPoint("geoPoint");
-        String pointName = ParseHelpers.getString("desc", location);
+        String pointName = ParseHelpers.getString(location, "desc");
 
         final double latitude = geoPoint.getLatitude();
         final double longitude = geoPoint.getLongitude();

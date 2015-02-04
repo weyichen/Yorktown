@@ -1,17 +1,19 @@
 package com.yorktown.yorktown;
 
+import com.parse.ParseException;
 import com.parse.ParseObject;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
+
+
 
 /**
  * Created by Daniel on 1/27/2015.
  */
 public class ParseHelpers {
 
-    public static String getString(String key, ParseObject pO) {
+    public static String getString(ParseObject pO, String key) {
         if (pO.has(key)) {
             return pO.getString(key);
         } else {
@@ -19,7 +21,15 @@ public class ParseHelpers {
         }
     }
 
-    public static JSONObject getJSONObject(String key, ParseObject pO) {
+    public static JSONArray getJSONArray(ParseObject pO, String key) {
+        if (pO.has(key)) {
+            return pO.getJSONArray(key);
+        } else {
+            return null;
+        }
+    }
+
+    public static JSONObject getJSONObject(ParseObject pO, String key) {
         if (pO.has(key)) {
             return pO.getJSONObject(key);
         } else {
@@ -27,18 +37,11 @@ public class ParseHelpers {
         }
     }
 
-    public static JSONObject[] getJSONObjectArray(JSONArray jsonArray) {
-        JSONObject[] jsonObjects = new JSONObject[jsonArray.length()];
-
+    public static void pin(ParseObject pO, String name) {
         try {
-            for(int i=0; i<jsonArray.length(); i++) {
-                jsonObjects[i] = jsonArray.getJSONObject(i);
-            }
-
-        } catch (JSONException e) {
+            pO.pin(name);
+        } catch (ParseException e) {
             e.printStackTrace();
         }
-
-        return jsonObjects;
     }
 }

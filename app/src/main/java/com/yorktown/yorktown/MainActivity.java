@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.ActionBarActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
@@ -20,12 +21,17 @@ import org.json.JSONException;
 public class MainActivity extends ActionBarActivity implements
         CardsFragment.OnTripSelectedListener,
         TripFragment.OnStepSelectedListener,
+        NewTripFragment.OnTripCreatedListener,
         LocationFragment.OnLocationListener {
 
 // *** GLOBAL VARIABLES ***
     protected double latitude = Double.NaN, longitude = Double.NaN;
+    protected LocalStore localStore;
 
-// *** FRAGMENT TAGS
+// *** FRAGMENT TAGS ***
+    protected static final String TAB_TAG = "tab";
+    protected static final String CARDS_TAG = "cards";
+    protected static final String TRIP_TAG = "trip";
     protected static final String LOCATION_TAG = "location";
 
 // *** REQUEST CODE ***
@@ -39,10 +45,12 @@ public class MainActivity extends ActionBarActivity implements
 
         setContentView(R.layout.activity_main);
 
+        localStore = new LocalStore(this);
+
         // set up fragments: LocationFragment (background) and TabFragment (foreground)
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
-                    .add(R.id.fragment_container, new TabFragment())
+                    .add(R.id.fragment_container, new TabFragment(), CARDS_TAG)
                     .add(new LocationFragment(), LOCATION_TAG)
                     .commit();
         }
@@ -123,6 +131,7 @@ public class MainActivity extends ActionBarActivity implements
         }
     }
 
+// *** FRAGMENT LISTENERS ***
     @Override
     public void onTripSelected(String tripId) {
         TripFragment newFragment = TripFragment.newInstance(tripId);
@@ -135,6 +144,19 @@ public class MainActivity extends ActionBarActivity implements
     @Override
     public void onStepSelected(String jsonString) {
         StepFragment newFragment = StepFragment.newInstance(jsonString);
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.fragment_container, newFragment)
+                .addToBackStack(null)
+                .commit();
+    }
+
+    @Override
+    public void onTripCreated(NewTripFragment fragment) {
+        Log.d("NewTripFragment", "completed");
+
+        getSupportFragmentManager().popBackStack();
+
+        TripFragment newFragment = TripFragment.newInstance(null);
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.fragment_container, newFragment)
                 .addToBackStack(null)

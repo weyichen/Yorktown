@@ -31,7 +31,7 @@ public class TripAdapter extends ArrayAdapter<ParseObject> {
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         View row = convertView;
-        TripHolder holder = null;
+        TripHolder holder;
 
         if(row == null) {
             LayoutInflater inflater = ((Activity)context).getLayoutInflater();
@@ -49,9 +49,9 @@ public class TripAdapter extends ArrayAdapter<ParseObject> {
         }
 
         ParseObject trip = data.get(position);
-        String title = ParseHelpers.getString("title", trip);
-        String desc = ParseHelpers.getString("details", trip);
-        String color = ParseHelpers.getString("color", trip);
+        String title = ParseHelpers.getString(trip, "title");
+        String desc = ParseHelpers.getString(trip, "details");
+        String color = ParseHelpers.getString(trip, "color");
 
         holder.tripTitle.setText(title);
         holder.tripDesc.setText(desc);

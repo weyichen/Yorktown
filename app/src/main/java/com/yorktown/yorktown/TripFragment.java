@@ -27,9 +27,11 @@ public class TripFragment extends ListFragment {
 
 // *** INITIALIZATION PARAMETERS ***
     private final static String ARG_TRIPID = "trip_id";
+    private final static String ARG_SAVEDTOSERVER = "saved_to_server";
 
 // *** GLOBAL PARAMETERS ***
     private String mTripId;
+    private boolean savedToServer;
     private JSONObject[] steps;
 
 // *** FACTORY ***
@@ -126,7 +128,7 @@ public class TripFragment extends ListFragment {
 
                     JSONArray jsonArray = object.getJSONArray("steps");
 
-                    steps = ParseHelpers.getJSONObjectArray(jsonArray);
+                    steps = JSONHelpers.getJSONObjectArray(jsonArray);
                     setListAdapter(new StepAdapter(getActivity(), R.layout.step_item, steps));
 
                 } else {

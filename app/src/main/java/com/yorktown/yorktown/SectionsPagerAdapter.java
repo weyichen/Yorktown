@@ -4,6 +4,8 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 
+import com.yorktown.yorktown.view.BlankFragment;
+
 import java.util.Locale;
 
 /**
@@ -12,7 +14,6 @@ import java.util.Locale;
 public class SectionsPagerAdapter extends FragmentPagerAdapter {
 
     public SectionsPagerAdapter(FragmentManager fm) {
-
         super(fm);
     }
 
@@ -21,13 +22,11 @@ public class SectionsPagerAdapter extends FragmentPagerAdapter {
 
         // TODO: return the appropriate fragments
         if (position == 0) {
-            Fragment cardsFragment = CardsFragment.newInstance();
-            return cardsFragment;
+            return CardsFragment.newInstance();
         }
 
-        if (position == 1) {
-            Fragment cardsFragment = CardsFragment.newInstance();
-            return cardsFragment;
+        else if (position == 1) {
+            return BlankFragment.newInstance();
         }
 
         return null;
