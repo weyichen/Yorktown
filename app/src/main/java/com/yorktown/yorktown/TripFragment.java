@@ -1,76 +1,46 @@
 package com.yorktown.yorktown;
 
-import android.app.Activity;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
 import android.support.v4.view.MenuItemCompat;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ListView;
 
-import com.parse.GetCallback;
-import com.parse.ParseException;
 import com.parse.ParseObject;
-import com.parse.ParseQuery;
+import com.yorktown.yorktown.eventbus.CreateStepEvent;
+import com.yorktown.yorktown.eventbus.CreateTripEvent;
+import com.yorktown.yorktown.eventbus.NewStepEvent;
+import com.yorktown.yorktown.eventbus.ReadStepEvent;
+import com.yorktown.yorktown.eventbus.ReadTripEvent;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import de.greenrobot.event.EventBus;
+
 
 public class TripFragment extends ListFragment {
 
-// *** LISTENER VARIABLES ***
-    OnStepSelectedListener mCallback;
-
-// *** INITIALIZATION PARAMETERS ***
-    private final static String ARG_TRIPID = "trip_id";
-    private final static String ARG_SAVEDTOSERVER = "saved_to_server";
-
 // *** GLOBAL PARAMETERS ***
-    private String mTripId;
-    private boolean savedToServer;
     private JSONObject[] steps;
+    private ParseObject parseObject;
 
 // *** FACTORY ***
-    public static TripFragment newInstance(String tripId) {
+    public static TripFragment newInstance() {
         TripFragment fragment = new TripFragment();
         Bundle args = new Bundle();
-        args.putString(ARG_TRIPID, tripId);
         fragment.setArguments(args);
         return fragment;
     }
 
-// *** INTERFACE ***
-    public interface OnStepSelectedListener {
-        public void onStepSelected(String step);
-    }
 
 // *** LIFECYCLE ***
     @Override
-    public void onAttach(Activity activity) {
-        super.onAttach(activity);
-
-        // This makes sure that the container activity has implemented
-        // the callback interface. If not, it throws an exception
-        try {
-            mCallback = (OnStepSelectedListener) activity;
-        } catch (ClassCastException e) {
-            throw new ClassCastException(activity.toString()
-                    + " must implement OnStepSelectedListener");
-        }
-    }
-
-    @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        // get initialization parameters
-        if (getArguments() != null) {
-            mTripId = getArguments().getString(ARG_TRIPID);
-        }
 
         // allow fragment to contribute to the menu
         setHasOptionsMenu(true);
@@ -80,7 +50,13 @@ public class TripFragment extends ListFragment {
     public void onStart() {
         super.onStart();
 
-        getItinerary(mTripId);
+        EventBus.getDefault().registerSticky(this);
+    }
+
+    @Override
+    public void onStop() {
+        EventBus.getDefault().unregister(this);
+        super.onStop();
     }
 
 // *** MENU ***
@@ -101,41 +77,38 @@ public class TripFragment extends ListFragment {
     }
 
     private void openAdd() {
-        NewStepFragment newFragment = NewStepFragment.newInstance(mTripId);
-        getActivity().getSupportFragmentManager().beginTransaction()
-                .replace(R.id.fragment_container, newFragment)
-                .addToBackStack(null)
-                .commit();
+        EventBus.getDefault().post(new NewStepEvent(parseObject));
     }
 
 // *** LISTENERS ***
     @Override
     public void onListItemClick(ListView l, View v, int position, long id) {
-        // Send the event to the host activity
-        mCallback.onStepSelected(steps[position].toString());
+        super.onListItemClick(l, v, position, id);
+
+        EventBus.getDefault().post(new ReadStepEvent(parseObject, position));
+    }
+
+// *** EVENTBUS LISTENERS ***
+    public void onEventMainThread(ReadTripEvent.FragmentEvent event){
+        this.parseObject = event.parseObject;
+        displayTrip();
+    }
+
+    public void onEventMainThread(CreateTripEvent.FragmentEvent event){
+        this.parseObject = event.parseObject;
+        displayTrip();
+    }
+
+    public void onEventMainThread(CreateStepEvent.FragmentEvent event){
+        this.parseObject = event.parseObject;
+        displayTrip();
     }
 
 // *** HELPERS ***
-    private void getItinerary(final String tripId) {
-
-        ParseQuery<ParseObject> query = ParseQuery.getQuery("Trip");
-        query.fromLocalDatastore();
-
-        query.getInBackground(tripId, new GetCallback<ParseObject>() {
-            public void done(ParseObject object, ParseException e) {
-                if (e == null) {
-                    Log.d("Trip", "Retrieved trip " + tripId);
-
-                    JSONArray jsonArray = object.getJSONArray("steps");
-
-                    steps = JSONHelpers.getJSONObjectArray(jsonArray);
-                    setListAdapter(new StepAdapter(getActivity(), R.layout.step_item, steps));
-
-                } else {
-                    Log.d("Trip", "Failed to retrieve trip " + tripId);
-                }
-            }
-        });
+    private void displayTrip() {
+        JSONArray jsonArray = parseObject.getJSONArray("steps");
+        steps = JSONHelpers.getJSONObjectArray(jsonArray);
+        setListAdapter(new StepAdapter(getActivity(), R.layout.step_item, steps));
     }
 
 }

@@ -23,40 +23,34 @@ import com.parse.ParseException;
 import com.parse.ParseGeoPoint;
 import com.parse.ParseObject;
 import com.parse.ParseQuery;
+import com.yorktown.yorktown.eventbus.ReadStepEvent;
 
-import org.json.JSONException;
+import org.json.JSONArray;
 import org.json.JSONObject;
+
+import de.greenrobot.event.EventBus;
 
 public class StepFragment extends Fragment {
 
 // *** INITIALIZATION PARAMETERS ***
-    private final static String ARG_STEPJSON = "step_json";
+    private final static String ARG_POSITION = "position";
 
 // *** GLOBAL PARAMETERS ***
-    private String mStepJSON;
+    private ParseObject parseObject;
 
 // *** UI ELEMENTS ***
     private SupportMapFragment mapFragment;
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
 
 // *** FACTORY ***
-    public static StepFragment newInstance(String stepJSON) {
-        StepFragment fragment = new StepFragment();
-        Bundle args = new Bundle();
-        args.putString(ARG_STEPJSON, stepJSON);
-        fragment.setArguments(args);
-        return fragment;
+    public static StepFragment newInstance() {
+        return new StepFragment();
     }
 
 // *** LIFECYCLE ***
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        // get initialization parameters
-        if (getArguments() != null) {
-            mStepJSON = getArguments().getString(ARG_STEPJSON);
-        }
 
         // allow fragment to contribute to the menu
         setHasOptionsMenu(true);
@@ -80,8 +74,9 @@ public class StepFragment extends Fragment {
     public void onStart() {
         super.onStart();
 
-        // display step information
-        updateStepView(mStepJSON);
+        EventBus.getDefault().registerSticky(this);
+
+
 
         // place the MapFragment
         FragmentManager fm = getChildFragmentManager();
@@ -96,34 +91,41 @@ public class StepFragment extends Fragment {
         // initialize the map
         if (mMap == null) {
             mMap = mapFragment.getMap();
-            mMap.setMyLocationEnabled(true);
+            //mMap.setMyLocationEnabled(true);
         }
+    }
+
+    @Override
+    public void onStop() {
+        EventBus.getDefault().unregister(this);
+        super.onStop();
+    }
+
+// *** EVENTBUS LISTENERS ***
+    public void onEventMainThread(ReadStepEvent.FragmentEvent event){
+        this.parseObject = event.parseObject;
+
+        updateStepView(event.position);
     }
 
 // *** HELPERS ***
-    private void updateStepView(String stepJSON) {
+    private void updateStepView(int position) {
 
-        try {
-            JSONObject jsonObject = new JSONObject(stepJSON);
+        JSONArray jsonArray = ParseHelpers.getJSONArray(parseObject, "steps");
+        JSONObject jsonObject = JSONHelpers.getJSONObject(jsonArray, position);
 
-            TextView stepTitle = (TextView) getActivity().findViewById(R.id.step_title);
-            stepTitle.setText(jsonObject.getString("name"));
+        TextView stepTitle = (TextView) getActivity().findViewById(R.id.step_title);
+        stepTitle.setText(JSONHelpers.getString(jsonObject, "name"));
 
-            TextView stepDetails = (TextView) getActivity().findViewById(R.id.step_details);
-            stepDetails.setText(jsonObject.getString("details"));
+        TextView stepDetails = (TextView) getActivity().findViewById(R.id.step_details);
+        stepDetails.setText(JSONHelpers.getString(jsonObject, "details"));
 
-            if (new Connectivity(getActivity()).isConnected()) {
-                getLocationsOnline(jsonObject.getString("location_id"));
-            } else {
-                getLocationsCached(jsonObject.getString("location_id"));
-            }
-
-
-        } catch (JSONException e) {
-            e.printStackTrace();
+        if (new Connectivity(getActivity()).isConnected()) {
+            getLocationsOnline(JSONHelpers.getString(jsonObject, "location_id"));
+        } else {
+            getLocationsCached(JSONHelpers.getString(jsonObject, "location_id"));
         }
     }
-
 
     private void getLocationsOnline(final String locationId) {
         ParseQuery<ParseObject> query = ParseQuery.getQuery("Location");
@@ -140,7 +142,7 @@ public class StepFragment extends Fragment {
                     });
 
                     // plot point on map
-                    plotOnMap(location);
+                    //plotOnMap(location);
                 }
             }
         });
@@ -153,7 +155,7 @@ public class StepFragment extends Fragment {
         query.getInBackground(locationId, new GetCallback<ParseObject>() {
             public void done(ParseObject location, ParseException e) {
                 if (e == null) {
-                    plotOnMap(location);
+                    //plotOnMap(location);
                 }
             }
         });

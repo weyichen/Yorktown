@@ -21,6 +21,18 @@ public class JSONHelpers {
         return jsonArray;
     }
 
+    public static JSONObject getJSONObject(JSONArray jsonArray, int position) {
+        JSONObject jsonObject = new JSONObject();
+
+        try {
+            jsonObject = jsonArray.getJSONObject(position);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        return jsonObject;
+    }
+
     public static JSONObject[] getJSONObjectArray(JSONArray jsonArray) {
         JSONObject[] jsonObjects = new JSONObject[jsonArray.length()];
 
@@ -34,5 +46,25 @@ public class JSONHelpers {
         }
 
         return jsonObjects;
+    }
+
+    public static String getString(JSONObject jsonObject, String key) {
+        String string = null;
+
+        try {
+            string = jsonObject.getString(key);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        return string;
+    }
+
+    public static void put(JSONObject jsonObject, String key, Object value) {
+        try {
+            jsonObject.put(key, value);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
     }
 }

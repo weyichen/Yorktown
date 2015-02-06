@@ -13,12 +13,11 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
 
-import com.parse.GetCallback;
-import com.parse.ParseException;
 import com.parse.ParseObject;
-import com.parse.ParseQuery;
 import com.parse.ParseUser;
 import com.yorktown.yorktown.dialog.ShowDialog;
+import com.yorktown.yorktown.eventbus.CreateStepEvent;
+import com.yorktown.yorktown.eventbus.NewStepEvent;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -27,19 +26,18 @@ import org.json.JSONObject;
 import java.util.Calendar;
 import java.util.Date;
 
+import de.greenrobot.event.EventBus;
+
 /**
  * Created by Daniel on 2/1/2015.
  */
 public class NewStepFragment extends Fragment
         implements View.OnClickListener, AdapterView.OnItemSelectedListener {
 
-// *** INITIALIZATION PARAMETERS ***
-    private final static String ARG_TRIPID = "trip_id";
-
 // *** GLOBAL PARAMETERS ***
-    private String mTripId;
     private ShowDialog showDialog;
     private int year, month, day, hour, minute;
+    private ParseObject parseObject;
 
 // *** UI ELEMENTS ***
     private EditText nameEditText;
@@ -51,10 +49,9 @@ public class NewStepFragment extends Fragment
     protected static final int TIME_CODE = 1;
 
 // *** FACTORY ***
-    public static NewStepFragment newInstance(String tripId) {
+    public static NewStepFragment newInstance() {
         NewStepFragment fragment = new NewStepFragment();
         Bundle args = new Bundle();
-        args.putString(ARG_TRIPID, tripId);
         fragment.setArguments(args);
         return fragment;
     }
@@ -64,18 +61,12 @@ public class NewStepFragment extends Fragment
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // get initialization parameters
-        if (getArguments() != null) {
-            mTripId = getArguments().getString(ARG_TRIPID);
-        }
-
         // allow fragment to contribute to the menu
         setHasOptionsMenu(true);
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-
         return inflater.inflate(R.layout.fragment_newstep, container, false);
     }
 
@@ -116,12 +107,25 @@ public class NewStepFragment extends Fragment
         view.findViewById(R.id.create_step).setOnClickListener(this);
     }
 
+    @Override
+    public void onStart() {
+        super.onStart();
+
+        EventBus.getDefault().registerSticky(this);
+    }
+
+    @Override
+    public void onStop() {
+        EventBus.getDefault().unregister(this);
+        super.onStop();
+    }
+
 // *** LISTENERS ***
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.create_step:
-                createStep(mTripId);
+                createStep();
                 break;
             case R.id.step_date:
                 showDialog.showDatePickerDialog(DATE_CODE);
@@ -160,8 +164,13 @@ public class NewStepFragment extends Fragment
         }
     }
 
+// *** EVENTBUS LISTENERS ***
+    public void onEventMainThread(NewStepEvent.FragmentEvent event){
+        this.parseObject = event.parseObject;
+    }
+
 // *** HELPERS ***
-    private void createStep(String tripId) {
+    private void createStep() {
         ParseUser currentUser = ParseUser.getCurrentUser();
 
         // grab information entered by user
@@ -181,21 +190,11 @@ public class NewStepFragment extends Fragment
             e.printStackTrace();
         }
 
-        // get existing steps JSONArray for this step, add the newly created JSONObject, then update it
-        ParseQuery<ParseObject> query = ParseQuery.getQuery("Trip");
-        query.fromLocalDatastore();
-
-        query.getInBackground(tripId, new GetCallback<ParseObject>() {
-            public void done(ParseObject object, ParseException e) {
-                if (e == null) {
-                    JSONArray jsonArray = ParseHelpers.getJSONArray(object, "steps");
-                    jsonArray.put(jsonData);
-                    object.put("steps", jsonArray);
-                    object.saveInBackground();
-
-                }
-            }
-        });
-
+        // put in JSONArray
+        JSONArray jsonArray = ParseHelpers.getJSONArray(parseObject, "steps");
+        jsonArray.put(jsonData);
+        parseObject.put("steps", jsonArray);
+        parseObject.saveEventually();
+        EventBus.getDefault().post(new CreateStepEvent(parseObject));
     }
 }

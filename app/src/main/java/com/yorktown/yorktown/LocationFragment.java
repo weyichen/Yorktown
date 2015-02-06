@@ -1,6 +1,5 @@
 package com.yorktown.yorktown;
 
-import android.app.Activity;
 import android.location.Location;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -12,11 +11,11 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.GoogleApiClient.ConnectionCallbacks;
 import com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListener;
 import com.google.android.gms.location.LocationServices;
+import com.yorktown.yorktown.eventbus.GetLocationEvent;
+
+import de.greenrobot.event.EventBus;
 
 public class LocationFragment extends Fragment implements ConnectionCallbacks, OnConnectionFailedListener {
-
-// *** VARIABLES ***
-    OnLocationListener mCallback;
 
     protected GoogleApiClient mGoogleApiClient;
     protected Location mLastLocation;
@@ -28,24 +27,10 @@ public class LocationFragment extends Fragment implements ConnectionCallbacks, O
 
 // *** ACTIVITY LIFECYCLE ***
     @Override
-    public void onAttach(Activity activity) {
-        super.onAttach(activity);
-
-        // This makes sure that the container activity has implemented
-        // the callback interface. If not, it throws an exception
-        try {
-            mCallback = (OnLocationListener) activity;
-        } catch (ClassCastException e) {
-            throw new ClassCastException(activity.toString()
-                    + " must implement OnTripSelectedListener");
-        }
-    }
-
-    @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-            buildGoogleApiClient();
+        buildGoogleApiClient();
     }
 
     @Override
@@ -67,8 +52,11 @@ public class LocationFragment extends Fragment implements ConnectionCallbacks, O
     public void onConnected(Bundle connectionHint) {
         mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
         if (mLastLocation != null) {
-            mCallback.onLocation(mLastLocation.getLatitude(), mLastLocation.getLongitude());
-            Toast.makeText(getActivity(), String.valueOf(mLastLocation.getLatitude()) + ", " + String.valueOf(mLastLocation.getLongitude()), Toast.LENGTH_LONG).show();
+            double latitude = mLastLocation.getLatitude();
+            double longitude = mLastLocation.getLongitude();
+            EventBus.getDefault().post(new GetLocationEvent(latitude, longitude));
+
+                    Toast.makeText(getActivity(), latitude + ", " + longitude, Toast.LENGTH_LONG).show();
         } else {
             Toast.makeText(getActivity(), R.string.no_location_detected, Toast.LENGTH_LONG).show();
         }

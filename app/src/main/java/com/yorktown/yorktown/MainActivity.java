@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.ActionBarActivity;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
@@ -13,16 +12,21 @@ import com.parse.ParseException;
 import com.parse.ParseObject;
 import com.parse.ParseQuery;
 import com.parse.ParseUser;
+import com.yorktown.yorktown.eventbus.CreateStepEvent;
+import com.yorktown.yorktown.eventbus.CreateTripEvent;
+import com.yorktown.yorktown.eventbus.GetLocationEvent;
+import com.yorktown.yorktown.eventbus.NewStepEvent;
+import com.yorktown.yorktown.eventbus.NewTripEvent;
+import com.yorktown.yorktown.eventbus.ReadStepEvent;
+import com.yorktown.yorktown.eventbus.ReadTripEvent;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 
+import de.greenrobot.event.EventBus;
 
-public class MainActivity extends ActionBarActivity implements
-        CardsFragment.OnTripSelectedListener,
-        TripFragment.OnStepSelectedListener,
-        NewTripFragment.OnTripCreatedListener,
-        LocationFragment.OnLocationListener {
+
+public class MainActivity extends ActionBarActivity {
 
 // *** GLOBAL VARIABLES ***
     protected double latitude = Double.NaN, longitude = Double.NaN;
@@ -51,9 +55,21 @@ public class MainActivity extends ActionBarActivity implements
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
                     .add(R.id.fragment_container, new TabFragment(), CARDS_TAG)
-                    .add(new LocationFragment(), LOCATION_TAG)
+                    //.add(new LocationFragment(), LOCATION_TAG)
                     .commit();
         }
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        EventBus.getDefault().register(this);
+    }
+
+    @Override
+    public void onStop() {
+        EventBus.getDefault().unregister(this);
+        super.onStop();
     }
 
 // *** UI COMPONENTS ***
@@ -120,6 +136,80 @@ public class MainActivity extends ActionBarActivity implements
         invalidateOptionsMenu();
     }
 
+// *** EVENTBUS LISTENER ***
+    public void onEvent(NewTripEvent event) {
+
+        EventBus.getDefault().postSticky(event.new FragmentEvent());
+        NewTripFragment newFragment = NewTripFragment.newInstance();
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.fragment_container, newFragment)
+                .addToBackStack(null)
+                .commit();
+    }
+
+    public void onEvent(CreateTripEvent event) {
+        EventBus.getDefault().postSticky(event.new FragmentEvent());
+
+        // close the NewTripFragment used to create this trip
+        getSupportFragmentManager().popBackStack();
+
+        TripFragment newFragment = TripFragment.newInstance();
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.fragment_container, newFragment)
+                .addToBackStack(null)
+                .commit();
+    }
+
+    public void onEvent(ReadTripEvent event) {
+        EventBus.getDefault().postSticky(event.new FragmentEvent());
+
+        TripFragment newFragment = TripFragment.newInstance();
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.fragment_container, newFragment)
+                .addToBackStack(null)
+                .commit();
+    }
+
+    public void onEvent(NewStepEvent event) {
+        EventBus.getDefault().postSticky(event.new FragmentEvent());
+
+        NewStepFragment newFragment = NewStepFragment.newInstance();
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.fragment_container, newFragment)
+                .addToBackStack(null)
+                .commit();
+    }
+
+    public void onEvent(CreateStepEvent event) {
+        EventBus.getDefault().postSticky(event.new FragmentEvent());
+
+        // close the NewStepFragment and TripFragment used to create this trip
+        getSupportFragmentManager().popBackStack();
+        getSupportFragmentManager().popBackStack();
+
+        TripFragment newFragment = TripFragment.newInstance();
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.fragment_container, newFragment)
+                .addToBackStack(null)
+                .commit();
+    }
+
+    public void onEvent(ReadStepEvent event) {
+        EventBus.getDefault().postSticky(event.new FragmentEvent());
+
+        StepFragment newFragment = StepFragment.newInstance();
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.fragment_container, newFragment)
+                .addToBackStack(null)
+                .commit();
+    }
+
+    public void onEvent(GetLocationEvent event) {
+        this.latitude = event.latitude;
+        this.longitude = event.longitude;
+    }
+
+
 // *** LISTENERS ***
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -129,45 +219,6 @@ public class MainActivity extends ActionBarActivity implements
         if(requestCode == 1 && resultCode == RESULT_OK) {
             invalidateOptionsMenu();
         }
-    }
-
-// *** FRAGMENT LISTENERS ***
-    @Override
-    public void onTripSelected(String tripId) {
-        TripFragment newFragment = TripFragment.newInstance(tripId);
-        getSupportFragmentManager().beginTransaction()
-                .replace(R.id.fragment_container, newFragment)
-                .addToBackStack(null)
-                .commit();
-    }
-
-    @Override
-    public void onStepSelected(String jsonString) {
-        StepFragment newFragment = StepFragment.newInstance(jsonString);
-        getSupportFragmentManager().beginTransaction()
-                .replace(R.id.fragment_container, newFragment)
-                .addToBackStack(null)
-                .commit();
-    }
-
-    @Override
-    public void onTripCreated(NewTripFragment fragment) {
-        Log.d("NewTripFragment", "completed");
-
-        getSupportFragmentManager().popBackStack();
-
-        TripFragment newFragment = TripFragment.newInstance(null);
-        getSupportFragmentManager().beginTransaction()
-                .replace(R.id.fragment_container, newFragment)
-                .addToBackStack(null)
-                .commit();
-    }
-
-    @Override
-    public void onLocation(double latitude, double longitude) {
-
-        this.latitude = latitude;
-        this.longitude = longitude;
     }
 
     // *** MENU ITEMS ***

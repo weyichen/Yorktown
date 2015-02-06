@@ -12,10 +12,7 @@ import java.util.List;
 
 // Use this class to track the number of locally-created trips and locations which have not been saved to the Parse server, and therefore do not have Parse objectIds yet
 public class LocalStore {
-
-    private int numTrips;
-    private int numLocations;
-    private String[] tripIds;
+    private List<ParseObject> trips;
 
     private MainActivity mainActivity;
 
@@ -23,23 +20,7 @@ public class LocalStore {
         this.mainActivity = activity;
     }
 
-    public int getNumTrips() {
-        return numTrips;
-    }
-
-    public int getNumLocations() {
-        return numLocations;
-    }
-
-    public void addTrip() {
-        numTrips++;
-    }
-
-    public void addLocation() {
-        numLocations++;
-    }
-
-    public void syncTrips(final CardsFragment cardsFragment, final int itemLayoutId) {
+    public void syncTrips() {
         ParseQuery<ParseObject> query = ParseQuery.getQuery("Trip");
 
         // only return these columns - doesn't work with local datastore
@@ -60,15 +41,6 @@ public class LocalStore {
                         }
                     });
 
-                    // Create an array adapter containing fetched trips for the ListView
-                    cardsFragment.setListAdapter(new TripAdapter(mainActivity, itemLayoutId, tripList));
-
-                    // store objectIds of trips for TripFragment access
-                    tripIds = new String[tripList.size()];
-                    for (int i=0; i<tripList.size(); i++) {
-                        tripIds[i] = tripList.get(i).getObjectId();
-                    }
-
                 } else {
                     Log.d("Trip", "Error: " + e.getMessage());
                 }
@@ -76,7 +48,7 @@ public class LocalStore {
         });
     }
 
-    public void getCachedTrips(final CardsFragment cardsFragment, final int itemLayoutId) {
+    public void fetchCachedTrips(final CardsFragment cardsFragment, final int itemLayoutId) {
         ParseQuery<ParseObject> query = ParseQuery.getQuery("Trip");
         query.fromPin("allTrips");
         query.orderByAscending("rank");
@@ -86,19 +58,15 @@ public class LocalStore {
             public void done(List<ParseObject> tripList, ParseException e) {
                 Log.d("Trip", "Retrieved " + tripList.size() + " trips offline");
 
+                trips = tripList;
+
                 // Create an array adapter containing fetched trips for the ListView
                 cardsFragment.setListAdapter(new TripAdapter(mainActivity, itemLayoutId, tripList));
-
-                // store objectIds of trips for TripFragment access
-                tripIds = new String[tripList.size()];
-                for (int i=0; i<tripList.size(); i++) {
-                    tripIds[i] = tripList.get(i).getObjectId();
-                }
             }
         });
     }
 
-    private void storeTripIds() {
-
+    public List<ParseObject> getTrips() {
+        return trips;
     }
 }

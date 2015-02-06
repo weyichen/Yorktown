@@ -10,14 +10,18 @@ import android.widget.EditText;
 
 import com.parse.ParseObject;
 import com.parse.ParseUser;
+import com.yorktown.yorktown.eventbus.NewTripEvent;
+import com.yorktown.yorktown.eventbus.ReadTripEvent;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import de.greenrobot.event.EventBus;
 
 /**
  * Created by Daniel on 1/31/2015.
  */
 public class NewTripFragment extends Fragment implements View.OnClickListener {
-
-// *** LISTENER VARIABLES ***
-    OnTripCreatedListener mCallback;
 
 // *** GLOBAL PARAMETERS ***
     MainActivity mainActivity;
@@ -35,7 +39,7 @@ public class NewTripFragment extends Fragment implements View.OnClickListener {
 
 // *** INTERFACE ***
     public interface OnTripCreatedListener {
-        public void onTripCreated(NewTripFragment fragment);
+        public void onTripCreated(ParseObject parseObject, NewTripFragment fragment);
     }
 
 // *** LIFECYCLE ***
@@ -44,15 +48,6 @@ public class NewTripFragment extends Fragment implements View.OnClickListener {
         super.onAttach(activity);
 
         mainActivity = (MainActivity) getActivity();
-
-        // This makes sure that the container activity has implemented
-        // the callback interface. If not, it throws an exception
-        try {
-            mCallback = (OnTripCreatedListener) activity;
-        } catch (ClassCastException e) {
-            throw new ClassCastException(activity.toString()
-                    + " must implement OnTripCreatedListener");
-        }
     }
 
     @Override
@@ -70,6 +65,19 @@ public class NewTripFragment extends Fragment implements View.OnClickListener {
         view.findViewById(R.id.create_trip).setOnClickListener(this);
     }
 
+    @Override
+    public void onStart() {
+        super.onStart();
+
+        EventBus.getDefault().registerSticky(this);
+    }
+
+    @Override
+    public void onStop() {
+        EventBus.getDefault().unregister(this);
+        super.onStop();
+    }
+
 // *** LISTENERS ***
     @Override
     public void onClick(View v) {
@@ -80,36 +88,32 @@ public class NewTripFragment extends Fragment implements View.OnClickListener {
         }
     }
 
+// *** EVENTBUS LISTENERS ***
+    public void onEventMainThread(NewTripEvent.FragmentEvent event) {
+
+    }
+
 // *** BUTTON HELPERS ***
     private void createTrip() {
         ParseUser currentUser = ParseUser.getCurrentUser();
 
         // create the trip and use saveEventually to pin it, so that future queries to the local datastore will return it
         ParseObject newTrip = new ParseObject("Trip");
-        newTrip.put("title", titleEditText.getText().toString());
+
+        String title = titleEditText.getText().toString();
+        newTrip.put("title", title);
 
         // create an empty but non-null array on Parse, so that value will not be undefined
-        newTrip.put("steps", JSONHelpers.newJSONArray("[]"));
+        JSONArray jsonArray = new JSONArray();
+        JSONObject jsonObject = new JSONObject();
+        JSONHelpers.put(jsonObject, "name", title);
+        jsonArray.put(jsonObject);
+        newTrip.put("steps", jsonArray);
 
         if (currentUser != null) newTrip.put("user", currentUser);
         newTrip.saveEventually();
 
-        mainActivity.localStore.addTrip();
-        ParseHelpers.pin(newTrip, "trip" +mainActivity.localStore.getNumTrips());
-
         // close the NewTripFragment
-        mCallback.onTripCreated(this);
-
-//        String newTripId = newTrip.getObjectId();
-//        Log.d("newTripId", "new trip is " + newTripId);
-//
-//        // create a new TripFragment for the selected trip, passing in the trip ID
-//        TripFragment newFragment = TripFragment.newInstance(newTripId);
-//
-//        // show the fragment
-//        getActivity().getSupportFragmentManager().beginTransaction()
-//                .replace(R.id.fragment_container, newFragment)
-//                .addToBackStack(null)
-//                .commit();
+        EventBus.getDefault().post(new ReadTripEvent(newTrip));
     }
 }

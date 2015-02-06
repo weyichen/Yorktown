@@ -11,29 +11,19 @@ import android.view.View;
 import android.widget.ListView;
 
 import com.parse.ParseObject;
+import com.yorktown.yorktown.eventbus.NewTripEvent;
+import com.yorktown.yorktown.eventbus.ReadTripEvent;
 
-import java.util.List;
+import de.greenrobot.event.EventBus;
 
 public class CardsFragment extends ListFragment {
 
-// *** LISTENER VARIABLES ***
-    OnTripSelectedListener mCallback;
-
 // *** GLOBAL PARAMETERS ***
-    private String[] tripIdList; // stores the objectId fields of all trips retrieved from Parse
     MainActivity mainActivity;
 
 // *** FACTORY ***
     public static CardsFragment newInstance() {
-        CardsFragment fragment = new CardsFragment();
-        Bundle args = new Bundle();
-        fragment.setArguments(args);
-        return fragment;
-    }
-
-// *** INTERFACE ***
-    public interface OnTripSelectedListener {
-        public void onTripSelected(String tripId);
+        return new CardsFragment();
     }
 
 // *** LIFECYCLE ***
@@ -42,15 +32,6 @@ public class CardsFragment extends ListFragment {
         super.onAttach(activity);
 
         mainActivity = (MainActivity) activity;
-
-        // This makes sure that the container activity has implemented
-        // the callback interface. If not, it throws an exception
-        try {
-            mCallback = (OnTripSelectedListener) activity;
-        } catch (ClassCastException e) {
-            throw new ClassCastException(activity.toString()
-                    + " must implement OnTripSelectedListener");
-        }
     }
 
     @Override
@@ -59,15 +40,16 @@ public class CardsFragment extends ListFragment {
 
         // allow fragment to contribute to the menu
         setHasOptionsMenu(true);
-
-
     }
 
     @Override
     public void onStart() {
         super.onStart();
 
-
+        // retrieve all trips from Parse
+        if (new Connectivity(getActivity()).isConnected()) {
+            mainActivity.localStore.syncTrips();
+        }
 
         // TODO: implement multi-fragment layout
 
@@ -77,12 +59,8 @@ public class CardsFragment extends ListFragment {
     public void onResume() {
         super.onResume();
 
-        // retrieve all trips from Parse
-        if (new Connectivity(getActivity()).isConnected()) {
-            mainActivity.localStore.syncTrips(this, R.layout.card_item);
-        } else {
-            mainActivity.localStore.getCachedTrips(this, R.layout.card_item);
-        }
+        mainActivity.localStore.fetchCachedTrips(this, R.layout.card_item);
+
     }
 
     @Override
@@ -103,11 +81,7 @@ public class CardsFragment extends ListFragment {
 
     // *** MENU ITEMS
     private void openAdd() {
-        NewTripFragment newFragment = NewTripFragment.newInstance();
-        getActivity().getSupportFragmentManager().beginTransaction()
-                .replace(R.id.fragment_container, newFragment)
-                .addToBackStack(null)
-                .commit();
+        EventBus.getDefault().post(new NewTripEvent());
     }
 
 // *** LISTENERS ***
@@ -115,16 +89,12 @@ public class CardsFragment extends ListFragment {
     public void onListItemClick(ListView l, View v, int position, long id) {
         super.onListItemClick(l, v, position, id);
 
-        // Send the event to the host activity
-        mCallback.onTripSelected(tripIdList[position]);
+        ParseObject tripObject = mainActivity.localStore.getTrips().get(position);
+        EventBus.getDefault().post(new ReadTripEvent(tripObject));
     }
+
+
 
 // *** HELPERS ***
-
-
-
-
-    private void displayTrips(List<ParseObject> tripList) {
-    }
 
 }
