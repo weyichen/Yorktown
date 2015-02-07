@@ -12,7 +12,9 @@ import android.widget.ListView;
 import com.parse.ParseObject;
 import com.yorktown.yorktown.eventbus.CreateStepEvent;
 import com.yorktown.yorktown.eventbus.CreateTripEvent;
-import com.yorktown.yorktown.eventbus.NewStepEvent;
+import com.yorktown.yorktown.eventbus.DeleteTripEvent;
+import com.yorktown.yorktown.eventbus.EditStepEvent;
+import com.yorktown.yorktown.eventbus.EditTripEvent;
 import com.yorktown.yorktown.eventbus.ReadStepEvent;
 import com.yorktown.yorktown.eventbus.ReadTripEvent;
 
@@ -30,10 +32,7 @@ public class TripFragment extends ListFragment {
 
 // *** FACTORY ***
     public static TripFragment newInstance() {
-        TripFragment fragment = new TripFragment();
-        Bundle args = new Bundle();
-        fragment.setArguments(args);
-        return fragment;
+        return new TripFragment();
     }
 
 
@@ -64,20 +63,42 @@ public class TripFragment extends ListFragment {
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         super.onCreateOptionsMenu(menu, inflater);
 
-        MenuItem addTripItem = menu.add(Menu.NONE, Menu.NONE, 1, "Add Trip")
-                .setIcon(R.drawable.ic_note_add_grey600_24dp);
-        MenuItemCompat.setShowAsAction(addTripItem, MenuItem.SHOW_AS_ACTION_IF_ROOM);
+        // create a new step for this trip
+        MenuItem addStepItem = menu.add(Menu.NONE, Menu.NONE, 1, "Add Step")
+                .setIcon(R.drawable.ic_add_black_24dp);
+        MenuItemCompat.setShowAsAction(addStepItem, MenuItem.SHOW_AS_ACTION_IF_ROOM);
 
-        addTripItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+        addStepItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
             public boolean onMenuItemClick(MenuItem menuItem) {
-                openAdd();
+                EventBus.getDefault().post(new EditStepEvent(parseObject, -1));
                 return true;
             }
         });
-    }
 
-    private void openAdd() {
-        EventBus.getDefault().post(new NewStepEvent(parseObject));
+        // edit this trip
+        MenuItem editTripItem = menu.add(Menu.NONE, Menu.NONE, 1, "Edit Trip")
+                .setIcon(R.drawable.ic_create_grey600_24dp);
+        MenuItemCompat.setShowAsAction(editTripItem, MenuItem.SHOW_AS_ACTION_IF_ROOM);
+
+        editTripItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            public boolean onMenuItemClick(MenuItem menuItem) {
+                EventBus.getDefault().post(new EditTripEvent(parseObject));
+                return true;
+            }
+        });
+
+        // delete this trip
+        MenuItem deleteTripItem = menu.add(Menu.NONE, Menu.NONE, 1, "Delete Trip")
+                .setIcon(R.drawable.ic_delete_grey600_24dp);
+        MenuItemCompat.setShowAsAction(deleteTripItem, MenuItem.SHOW_AS_ACTION_IF_ROOM);
+
+        deleteTripItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            public boolean onMenuItemClick(MenuItem menuItem) {
+                EventBus.getDefault().post(new DeleteTripEvent());
+                parseObject.deleteEventually();
+                return true;
+            }
+        });
     }
 
 // *** LISTENERS ***
@@ -110,5 +131,4 @@ public class TripFragment extends ListFragment {
         steps = JSONHelpers.getJSONObjectArray(jsonArray);
         setListAdapter(new StepAdapter(getActivity(), R.layout.step_item, steps));
     }
-
 }

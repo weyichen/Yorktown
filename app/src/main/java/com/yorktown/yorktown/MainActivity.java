@@ -14,9 +14,11 @@ import com.parse.ParseQuery;
 import com.parse.ParseUser;
 import com.yorktown.yorktown.eventbus.CreateStepEvent;
 import com.yorktown.yorktown.eventbus.CreateTripEvent;
+import com.yorktown.yorktown.eventbus.DeleteStepEvent;
+import com.yorktown.yorktown.eventbus.DeleteTripEvent;
+import com.yorktown.yorktown.eventbus.EditStepEvent;
+import com.yorktown.yorktown.eventbus.EditTripEvent;
 import com.yorktown.yorktown.eventbus.GetLocationEvent;
-import com.yorktown.yorktown.eventbus.NewStepEvent;
-import com.yorktown.yorktown.eventbus.NewTripEvent;
 import com.yorktown.yorktown.eventbus.ReadStepEvent;
 import com.yorktown.yorktown.eventbus.ReadTripEvent;
 
@@ -55,7 +57,7 @@ public class MainActivity extends ActionBarActivity {
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
                     .add(R.id.fragment_container, new TabFragment(), CARDS_TAG)
-                    //.add(new LocationFragment(), LOCATION_TAG)
+                    .add(new LocationFragment(), LOCATION_TAG)
                     .commit();
         }
     }
@@ -137,10 +139,12 @@ public class MainActivity extends ActionBarActivity {
     }
 
 // *** EVENTBUS LISTENER ***
-    public void onEvent(NewTripEvent event) {
-
+    public void onEvent(EditTripEvent event) {
         EventBus.getDefault().postSticky(event.new FragmentEvent());
-        NewTripFragment newFragment = NewTripFragment.newInstance();
+
+        ParseObject parseObject = event.parseObject;
+
+        EditTripFragment newFragment = EditTripFragment.newInstance();
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.fragment_container, newFragment)
                 .addToBackStack(null)
@@ -170,10 +174,17 @@ public class MainActivity extends ActionBarActivity {
                 .commit();
     }
 
-    public void onEvent(NewStepEvent event) {
+    public void onEvent(DeleteTripEvent event) {
         EventBus.getDefault().postSticky(event.new FragmentEvent());
 
-        NewStepFragment newFragment = NewStepFragment.newInstance();
+        // close the TripFragment used to delete this trip
+        getSupportFragmentManager().popBackStack();
+    }
+
+    public void onEvent(EditStepEvent event) {
+        EventBus.getDefault().postSticky(event.new FragmentEvent());
+
+        EditStepFragment newFragment = EditStepFragment.newInstance();
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.fragment_container, newFragment)
                 .addToBackStack(null)
@@ -202,6 +213,13 @@ public class MainActivity extends ActionBarActivity {
                 .replace(R.id.fragment_container, newFragment)
                 .addToBackStack(null)
                 .commit();
+    }
+
+    public void onEvent(DeleteStepEvent event) {
+        EventBus.getDefault().postSticky(event.new FragmentEvent());
+
+        // close the StepFragment used to delete this step
+        getSupportFragmentManager().popBackStack();
     }
 
     public void onEvent(GetLocationEvent event) {

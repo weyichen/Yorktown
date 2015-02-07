@@ -7,10 +7,11 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.TextView;
 
 import com.parse.ParseObject;
 import com.parse.ParseUser;
-import com.yorktown.yorktown.eventbus.NewTripEvent;
+import com.yorktown.yorktown.eventbus.EditTripEvent;
 import com.yorktown.yorktown.eventbus.ReadTripEvent;
 
 import org.json.JSONArray;
@@ -21,25 +22,18 @@ import de.greenrobot.event.EventBus;
 /**
  * Created by Daniel on 1/31/2015.
  */
-public class NewTripFragment extends Fragment implements View.OnClickListener {
+public class EditTripFragment extends Fragment implements View.OnClickListener {
 
 // *** GLOBAL PARAMETERS ***
     MainActivity mainActivity;
+    private ParseObject parseObject; // if this is null, we are creating a new trip
 
 // *** UI ELEMENTS ***
     private EditText titleEditText;
 
 // *** FACTORY ***
-    public static NewTripFragment newInstance() {
-        NewTripFragment fragment = new NewTripFragment();
-        Bundle args = new Bundle();
-        fragment.setArguments(args);
-        return fragment;
-    }
-
-// *** INTERFACE ***
-    public interface OnTripCreatedListener {
-        public void onTripCreated(ParseObject parseObject, NewTripFragment fragment);
+    public static EditTripFragment newInstance() {
+        return new EditTripFragment();
     }
 
 // *** LIFECYCLE ***
@@ -83,17 +77,22 @@ public class NewTripFragment extends Fragment implements View.OnClickListener {
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.create_trip:
-                createTrip();
+                if (parseObject == null) createTrip(); else editTrip();
                 break;
         }
     }
 
 // *** EVENTBUS LISTENERS ***
-    public void onEventMainThread(NewTripEvent.FragmentEvent event) {
+    public void onEventMainThread(EditTripEvent.FragmentEvent event) {
+        parseObject = event.parseObject;
 
+        // display editable information
+        if (parseObject != null) {
+            titleEditText.setText(ParseHelpers.getString(parseObject, "title"), TextView.BufferType.EDITABLE);
+        }
     }
 
-// *** BUTTON HELPERS ***
+// *** HELPERS ***
     private void createTrip() {
         ParseUser currentUser = ParseUser.getCurrentUser();
 
@@ -103,7 +102,7 @@ public class NewTripFragment extends Fragment implements View.OnClickListener {
         String title = titleEditText.getText().toString();
         newTrip.put("title", title);
 
-        // create an empty but non-null array on Parse, so that value will not be undefined
+        // TODO: testing create a new array of steps, with the first step being the name of the trip
         JSONArray jsonArray = new JSONArray();
         JSONObject jsonObject = new JSONObject();
         JSONHelpers.put(jsonObject, "name", title);
@@ -113,7 +112,14 @@ public class NewTripFragment extends Fragment implements View.OnClickListener {
         if (currentUser != null) newTrip.put("user", currentUser);
         newTrip.saveEventually();
 
-        // close the NewTripFragment
+        // close the NewTripFragment and pass on the newly created ParseObject
         EventBus.getDefault().post(new ReadTripEvent(newTrip));
+    }
+
+    private void editTrip() {
+        String title = titleEditText.getText().toString();
+        parseObject.put("title", title);
+        parseObject.saveEventually();
+        EventBus.getDefault().post(new ReadTripEvent(parseObject));
     }
 }

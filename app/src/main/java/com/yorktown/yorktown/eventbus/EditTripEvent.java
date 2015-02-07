@@ -5,11 +5,11 @@ import com.parse.ParseObject;
 /**
  * Created by Daniel on 2/4/2015.
  */
-public class NewStepEvent {
+public class EditTripEvent {
 
     public final ParseObject parseObject;
 
-    public NewStepEvent(ParseObject parseObject) {
+    public EditTripEvent(ParseObject parseObject) {
         this.parseObject = parseObject;
     }
 
@@ -18,7 +18,7 @@ public class NewStepEvent {
         public final ParseObject parseObject;
 
         public FragmentEvent () {
-            this.parseObject = NewStepEvent.this.parseObject;
+            this.parseObject = EditTripEvent.this.parseObject;
         }
     }
 }

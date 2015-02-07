@@ -5,8 +5,12 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.view.MenuItemCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -23,20 +27,22 @@ import com.parse.ParseException;
 import com.parse.ParseGeoPoint;
 import com.parse.ParseObject;
 import com.parse.ParseQuery;
+import com.yorktown.yorktown.eventbus.DeleteStepEvent;
+import com.yorktown.yorktown.eventbus.EditStepEvent;
 import com.yorktown.yorktown.eventbus.ReadStepEvent;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.util.List;
+
 import de.greenrobot.event.EventBus;
 
 public class StepFragment extends Fragment {
 
-// *** INITIALIZATION PARAMETERS ***
-    private final static String ARG_POSITION = "position";
-
 // *** GLOBAL PARAMETERS ***
     private ParseObject parseObject;
+    private int position;
 
 // *** UI ELEMENTS ***
     private SupportMapFragment mapFragment;
@@ -61,13 +67,6 @@ public class StepFragment extends Fragment {
         super.onCreateView(inflater, container, savedInstanceState);
 
         return inflater.inflate(R.layout.fragment_step, container, false);
-    }
-
-    @Override
-    public void onActivityCreated(Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
-
-
     }
 
     @Override
@@ -101,11 +100,43 @@ public class StepFragment extends Fragment {
         super.onStop();
     }
 
+// *** MENU ***
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        super.onCreateOptionsMenu(menu, inflater);
+
+        // edit this step
+        MenuItem editStepItem = menu.add(Menu.NONE, Menu.NONE, 1, "Edit Step")
+                .setIcon(R.drawable.ic_create_grey600_24dp);
+        MenuItemCompat.setShowAsAction(editStepItem, MenuItem.SHOW_AS_ACTION_IF_ROOM);
+
+        editStepItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            public boolean onMenuItemClick(MenuItem menuItem) {
+                EventBus.getDefault().post(new EditStepEvent(parseObject, position));
+                return true;
+            }
+        });
+
+        // delete this trip
+        MenuItem deleteStepItem = menu.add(Menu.NONE, Menu.NONE, 1, "Delete Step")
+                .setIcon(R.drawable.ic_delete_grey600_24dp);
+        MenuItemCompat.setShowAsAction(deleteStepItem, MenuItem.SHOW_AS_ACTION_IF_ROOM);
+
+        deleteStepItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            public boolean onMenuItemClick(MenuItem menuItem) {
+                deleteStep();
+                return true;
+            }
+        });
+
+    }
+
 // *** EVENTBUS LISTENERS ***
     public void onEventMainThread(ReadStepEvent.FragmentEvent event){
         this.parseObject = event.parseObject;
+        this.position = event.position;
 
-        updateStepView(event.position);
+        updateStepView(position);
     }
 
 // *** HELPERS ***
@@ -125,6 +156,16 @@ public class StepFragment extends Fragment {
         } else {
             getLocationsCached(JSONHelpers.getString(jsonObject, "location_id"));
         }
+    }
+
+    private void deleteStep() {
+        JSONArray jsonArray = ParseHelpers.getJSONArray(parseObject, "steps");
+        List<JSONObject> jsonObjects = JSONHelpers.getJSONObjectList(jsonArray);
+        jsonObjects.remove(position);
+        jsonArray = JSONHelpers.getJSONArrayFromList(jsonObjects);
+        parseObject.put("steps", jsonArray);
+        parseObject.saveEventually();
+        EventBus.getDefault().post(new DeleteStepEvent());
     }
 
     private void getLocationsOnline(final String locationId) {

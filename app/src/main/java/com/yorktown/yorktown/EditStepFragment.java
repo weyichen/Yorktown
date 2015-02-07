@@ -17,7 +17,7 @@ import com.parse.ParseObject;
 import com.parse.ParseUser;
 import com.yorktown.yorktown.dialog.ShowDialog;
 import com.yorktown.yorktown.eventbus.CreateStepEvent;
-import com.yorktown.yorktown.eventbus.NewStepEvent;
+import com.yorktown.yorktown.eventbus.EditStepEvent;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -31,13 +31,14 @@ import de.greenrobot.event.EventBus;
 /**
  * Created by Daniel on 2/1/2015.
  */
-public class NewStepFragment extends Fragment
+public class EditStepFragment extends Fragment
         implements View.OnClickListener, AdapterView.OnItemSelectedListener {
 
 // *** GLOBAL PARAMETERS ***
     private ShowDialog showDialog;
     private int year, month, day, hour, minute;
     private ParseObject parseObject;
+    private int position;
 
 // *** UI ELEMENTS ***
     private EditText nameEditText;
@@ -49,8 +50,8 @@ public class NewStepFragment extends Fragment
     protected static final int TIME_CODE = 1;
 
 // *** FACTORY ***
-    public static NewStepFragment newInstance() {
-        NewStepFragment fragment = new NewStepFragment();
+    public static EditStepFragment newInstance() {
+        EditStepFragment fragment = new EditStepFragment();
         Bundle args = new Bundle();
         fragment.setArguments(args);
         return fragment;
@@ -125,7 +126,7 @@ public class NewStepFragment extends Fragment
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.create_step:
-                createStep();
+                editStep();
                 break;
             case R.id.step_date:
                 showDialog.showDatePickerDialog(DATE_CODE);
@@ -165,12 +166,23 @@ public class NewStepFragment extends Fragment
     }
 
 // *** EVENTBUS LISTENERS ***
-    public void onEventMainThread(NewStepEvent.FragmentEvent event){
+    public void onEventMainThread(EditStepEvent.FragmentEvent event) {
         this.parseObject = event.parseObject;
+        this.position = event.position;
+
+        // display editable information
+        if (position != -1) {
+            JSONArray jsonArray = ParseHelpers.getJSONArray(parseObject, "steps");
+            JSONObject jsonObject = JSONHelpers.getJSONObject(jsonArray, position);
+
+            nameEditText.setText(JSONHelpers.getString(jsonObject, "name"));
+            typeSpinner.setSelection(JSONHelpers.getInt(jsonObject, "type"));
+
+        }
     }
 
 // *** HELPERS ***
-    private void createStep() {
+    private void editStep() {
         ParseUser currentUser = ParseUser.getCurrentUser();
 
         // grab information entered by user
@@ -192,7 +204,14 @@ public class NewStepFragment extends Fragment
 
         // put in JSONArray
         JSONArray jsonArray = ParseHelpers.getJSONArray(parseObject, "steps");
-        jsonArray.put(jsonData);
+
+        // either create a new step or edit it by replacing the old one
+        if (position == -1) {
+            jsonArray.put(jsonData);
+        } else {
+            JSONHelpers.putInArray(jsonArray, position, jsonData);
+        }
+
         parseObject.put("steps", jsonArray);
         parseObject.saveEventually();
         EventBus.getDefault().post(new CreateStepEvent(parseObject));

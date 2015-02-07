@@ -1,12 +1,11 @@
 package com.yorktown.yorktown.eventbus;
 
 /**
- * Created by Daniel on 2/4/2015.
+ * Created by Daniel on 2/6/2015.
  */
-public class NewTripEvent {
+public class DeleteTripEvent {
 
-    public NewTripEvent() {
-
+    public DeleteTripEvent() {
     }
 
     public class FragmentEvent {

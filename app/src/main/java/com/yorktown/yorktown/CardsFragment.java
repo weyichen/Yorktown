@@ -11,7 +11,7 @@ import android.view.View;
 import android.widget.ListView;
 
 import com.parse.ParseObject;
-import com.yorktown.yorktown.eventbus.NewTripEvent;
+import com.yorktown.yorktown.eventbus.EditTripEvent;
 import com.yorktown.yorktown.eventbus.ReadTripEvent;
 
 import de.greenrobot.event.EventBus;
@@ -81,7 +81,7 @@ public class CardsFragment extends ListFragment {
 
     // *** MENU ITEMS
     private void openAdd() {
-        EventBus.getDefault().post(new NewTripEvent());
+        EventBus.getDefault().post(new EditTripEvent(null));
     }
 
 // *** LISTENERS ***
