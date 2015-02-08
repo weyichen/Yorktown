@@ -154,7 +154,8 @@ public class MainActivity extends ActionBarActivity {
     public void onEvent(CreateTripEvent event) {
         EventBus.getDefault().postSticky(event.new FragmentEvent());
 
-        // close the NewTripFragment used to create this trip
+        // close the NewTripFragment and TripFragment used to create this trip
+        getSupportFragmentManager().popBackStack();
         getSupportFragmentManager().popBackStack();
 
         TripFragment newFragment = TripFragment.newInstance();
